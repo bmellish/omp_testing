@@ -1,0 +1,1 @@
+add_library(open_mp_functions open_mp_functions.cpp)

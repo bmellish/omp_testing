@@ -1,0 +1,6 @@
+// The configured options and settings for OpenMP program.
+#define OpenMP_VERSION_MAJOR @OpenMP_VERSION_MAJOR@
+#define OpenMP_VERSION_MINOR @OpenMP_VERSION_MINOR@
+
+#cmakedefine USE_OPEN_MP_FUNCTIONS
+#cmakedefine OPENMP_FOUND
