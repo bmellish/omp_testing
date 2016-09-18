@@ -14,11 +14,18 @@
 class omp_tester
 {
 private:
-    int a_var;
-    std::vector<std::vector<double> > matrix;
-    double run_norm();
-    double run_omp();
+    bool add_sleep = false;
+    struct Stats {
+        double mean;
+        double std_dev;
+    };
+    void omp_sine();
+    void normal_sine();
+    void run_sequential_tasks();
+    void run_omp_tasks();
+    Stats get_stats(std::vector<int>);
 public:
+
     /*!
      * \brief run_tests
      * \return

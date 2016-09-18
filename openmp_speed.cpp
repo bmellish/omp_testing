@@ -12,7 +12,7 @@
 
 int main (int argc, char *argv[])
 {
-    std::cout << "Version" << OpenMP_VERSION_MAJOR << "." << OpenMP_VERSION_MINOR << std::endl;
+    std::cout << "Version: " << OpenMP_VERSION_MAJOR << "." << OpenMP_VERSION_MINOR << std::endl;
 
     omp_tester my_tester;
 

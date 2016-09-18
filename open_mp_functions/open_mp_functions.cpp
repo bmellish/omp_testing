@@ -4,6 +4,7 @@
 #include <omp.h>
 
 #include <chrono>
+#include <thread>
 
 
 using namespace arma;
@@ -17,58 +18,134 @@ double omp_tester::run_tests()
     std::vector<int> v_omp;
     std::vector<int> v_norm;
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        run_omp();
+        omp_sine();
         std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 
-        int ms = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-        std::cout << "omp time: " << ms << std::endl;
-        v_omp.push_back(ms);
+        int ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        //std::cout << "omp time: " << ns << std::endl;
+        v_omp.push_back(ns);
     }
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 1000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        run_norm();
+        normal_sine();
         std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 
-        int ms = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
-        std::cout << "norm time: " << ms << std::endl;
-        v_norm.push_back(ms);
+        int ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        //std::cout << "norm time: " << ns << std::endl;
+        v_norm.push_back(ns);
     }
 
-    double sum_omp = std::accumulate(v_omp.begin(), v_omp.end(), 0.0);
-    double mean_omp = sum_omp / v_omp.size();
+    omp_tester::Stats omp_stats;
+    omp_stats = get_stats(v_omp);
 
-    double sum_norm = std::accumulate(v_norm.begin(), v_norm.end(), 0.0);
-    double mean_norm = sum_norm / v_norm.size();
+    omp_tester::Stats norm_stats;
+    norm_stats = get_stats(v_norm);
 
-    std::cout << "Open MP: " << mean_omp << " microseconds" << std::endl;
-    std::cout << "Norm:  " << mean_norm << " microseconds" << std::endl;
+    std::cout << "   OpenMP mean: " << omp_stats.mean << " nanoseconds" << std::endl;
+    std::cout << "OpenMP std dev: " << omp_stats.std_dev << std::endl;
+    std::cout << "   Normal mean: " << norm_stats.mean << " nanoseconds" << std::endl;
+    std::cout << "Normal std dev: " << norm_stats.std_dev << std::endl;
+
+
+
+
+    std::cout << "START LARGE SECTION!" << std::endl;
+
+    //Create a vector for storing all the run times.
+    std::vector<int> v_omp_l;
+    std::vector<int> v_norm_l;
+
+    for (int i = 0; i < 1000; i++)
+    {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        run_omp_large();
+        std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+
+        int ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        //std::cout << "omp time: " << ns << std::endl;
+        v_omp_l.push_back(ns);
+    }
+
+    for (int i = 0; i < 1000; i++)
+    {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        run_norm_large();
+        std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+
+        int ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+        //std::cout << "norm time: " << ns << std::endl;
+        v_norm_l.push_back(ns);
+    }
+
+    omp_tester::Stats omp_stats_l;
+    omp_stats_l = get_stats(v_omp_l);
+
+    omp_tester::Stats norm_stats_l;
+    norm_stats_l = get_stats(v_norm_l);
+
+    std::cout << "   OpenMP mean: " << omp_stats_l.mean << " nanoseconds" << std::endl;
+    std::cout << "OpenMP std dev: " << omp_stats_l.std_dev << std::endl;
+    std::cout << "   Normal mean: " << norm_stats_l.mean << " nanoseconds" << std::endl;
+    std::cout << "Normal std dev: " << norm_stats_l.std_dev << std::endl;
+
+
     return 0;
 }
-
-double omp_tester::run_omp()
+omp_tester::Stats omp_tester::get_stats(std::vector<int> v)
 {
+    omp_tester::Stats cur_stats;
+    double sum = std::accumulate(v.begin(), v.end(), 0.0);
+    double mean = sum / v.size();
+    std::vector<double> diff(v.size());
+    std::transform(v.begin(), v.end(), diff.begin(), [mean](double x) { return x - mean; });
+    double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / v.size());
+
+    cur_stats.mean = mean;
+    cur_stats.std_dev = stdev;
+    return cur_stats;
+}
+
+void omp_tester::omp_sine()
+{
+
     const int size = 25600;
     double sinTable[size];
 
-#pragma omp parallel num_threads(8)
-    {
-        printf("hello from %d of %d\n",
-               omp_get_thread_num(),
-               omp_get_num_threads());
 #pragma omp parallel for
-        for(int n=0; n<size; ++n)
+    for(int n=0; n<size; ++n)
+    {
+        //I used this to verify that this is actually running multithreaded.
+        //Uncomment if you want to verify also.
+        //int cur_thread = omp_get_thread_num();
+        //std::cout << "omp thread num: " << cur_thread << std::endl;
+
+        sinTable[n] = std::sin(2 * M_PI * n / size);
+        //This sleep will cause OpenMP to run faster than sequential code.
+        if(add_sleep)
         {
-            sinTable[n] = std::sin(2 * M_PI * n / size);
+            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
         }
+
+        //Again there is some code commented out here for debugging.
+        //This will allow you to see the order OpenMP decides to index
+        //into the array.
+/*
+#pragma omp critical
+        {
+        std::cout << "Setting Index: " << n << std::endl;
+        }
+*/
     }
+    (void)sinTable; //suppress compiler warning
 }
 
-double omp_tester::run_norm()
+void omp_tester::normal_sine()
 {
     const int size = 25600;
     double sinTable[size];
@@ -76,5 +153,45 @@ double omp_tester::run_norm()
     for(int n=0; n<size; ++n)
     {
         sinTable[n] = std::sin(2 * M_PI * n / size);
+        if(add_sleep)
+        {
+            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+        }
     }
+    (void)sinTable; //suppress compiler warning
+}
+
+void omp_tester::run_omp_tasks()
+{
+
+    #pragma omp parallel
+    {
+
+        #pragma omp single
+        {
+            #pragma omp task
+            {normal_sine();}
+            #pragma omp task
+            {normal_sine();}
+            #pragma omp task
+            {normal_sine();}
+            #pragma omp task
+            {normal_sine();}
+            #pragma omp task
+            {normal_sine();}
+            #pragma omp task
+            {normal_sine();}
+        }
+    }
+}
+
+void omp_tester::run_sequential_tasks()
+{
+
+normal_sine();
+normal_sine();
+normal_sine();
+normal_sine();
+normal_sine();
+normal_sine();
 }

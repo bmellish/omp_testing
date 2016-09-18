@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 project (OpenMP)
+set( CMAKE_VERBOSE_MAKEFILE off )
 # Section for injecting a version number into a hpp file.
 set (OpenMP_VERSION_MAJOR 1)
 set (OpenMP_VERSION_MINOR 0)
