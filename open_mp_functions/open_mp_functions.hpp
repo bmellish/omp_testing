@@ -10,6 +10,8 @@
 
 /*!
  * \brief The omp_tester class
+ *        This class will facilitate the calling a few functions that can 
+ *        demonstrate some useage scenarios for OpenMP.
  */
 class omp_tester
 {
