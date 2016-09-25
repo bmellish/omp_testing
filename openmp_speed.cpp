@@ -12,11 +12,12 @@
 
 int main (int argc, char *argv[])
 {
+    // Print out what version the user is running.  Can be updated via cmake configs.
     std::cout << "Version: " << OpenMP_VERSION_MAJOR << "." << OpenMP_VERSION_MINOR << std::endl;
-
+    // Instantiate the omp_tester class.
     omp_tester my_tester;
-
+    // Run the public method that kicks off the tests.
     my_tester.run_tests();
-
+    // TODO:: work in some error checking.
     return 0;
 }

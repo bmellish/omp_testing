@@ -1,23 +1,24 @@
 #include "open_mp_functions.hpp"
 #include <armadillo>
-
 #include <omp.h>
-
 #include <chrono>
 #include <thread>
-
-
+// TODO: Use armadillo matrix instead of the standard library.
 using namespace arma;
 
 double omp_tester::run_tests()
 {
+    // NOTE: The code below is not meant to be scalable, demo purposes only.
+    //       There is a fair amount of repeat code that could easily be re-factored.
+    // TODO: use armadillo matrices instead of std::vectors.
     mat A = randu<mat>(1000, 1000);
     mat B = randu<mat>(1000, 1000);
 
-    //Create a vector for storing all the run times.
+    // Create a vector for storing all the execution times.
     std::vector<int> v_omp;
     std::vector<int> v_norm;
 
+    // Run the code omp code 1000 times and get an average execution time.
     for (int i = 0; i < 1000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -28,7 +29,7 @@ double omp_tester::run_tests()
         //std::cout << "omp time: " << ns << std::endl;
         v_omp.push_back(ns);
     }
-
+    // Run the straight line code 1000 times and get an average execution time.
     for (int i = 0; i < 1000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -39,10 +40,10 @@ double omp_tester::run_tests()
         //std::cout << "norm time: " << ns << std::endl;
         v_norm.push_back(ns);
     }
-
+    // Get the stats for the omp loop.
     omp_tester::Stats omp_stats;
     omp_stats = get_stats(v_omp);
-
+    // Get the stats for the straight line loop.
     omp_tester::Stats norm_stats;
     norm_stats = get_stats(v_norm);
 
@@ -51,15 +52,14 @@ double omp_tester::run_tests()
     std::cout << "   Normal mean: " << norm_stats.mean << " nanoseconds" << std::endl;
     std::cout << "Normal std dev: " << norm_stats.std_dev << std::endl;
 
-
-
-
-    std::cout << "START LARGE SECTION!" << std::endl;
+    // ----------Start of OMP Tasks demonstration-------------
+    std::cout << "START LONG EXECUTION SECTION!" << std::endl;
 
     //Create a vector for storing all the run times.
     std::vector<int> v_omp_l;
     std::vector<int> v_norm_l;
 
+    // Execute long running code with OMP sections.
     for (int i = 0; i < 1000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -70,7 +70,7 @@ double omp_tester::run_tests()
         //std::cout << "omp time: " << ns << std::endl;
         v_omp_l.push_back(ns);
     }
-
+    // Execute long running code with straight line code.
     for (int i = 0; i < 1000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -92,10 +92,10 @@ double omp_tester::run_tests()
     std::cout << "OpenMP std dev: " << omp_stats_l.std_dev << std::endl;
     std::cout << "   Normal mean: " << norm_stats_l.mean << " nanoseconds" << std::endl;
     std::cout << "Normal std dev: " << norm_stats_l.std_dev << std::endl;
-
-
+    
     return 0;
 }
+// See header for comments.
 omp_tester::Stats omp_tester::get_stats(std::vector<int> v)
 {
     omp_tester::Stats cur_stats;
@@ -110,7 +110,7 @@ omp_tester::Stats omp_tester::get_stats(std::vector<int> v)
     cur_stats.std_dev = stdev;
     return cur_stats;
 }
-
+// See header for comments.
 void omp_tester::omp_sine()
 {
 
@@ -160,13 +160,11 @@ void omp_tester::normal_sine()
     }
     (void)sinTable; //suppress compiler warning
 }
-
+// See header for comments.
 void omp_tester::run_omp_tasks()
 {
-
     #pragma omp parallel
     {
-
         #pragma omp single
         {
             #pragma omp task
@@ -187,11 +185,10 @@ void omp_tester::run_omp_tasks()
 
 void omp_tester::run_sequential_tasks()
 {
-
-normal_sine();
-normal_sine();
-normal_sine();
-normal_sine();
-normal_sine();
-normal_sine();
+    normal_sine();
+    normal_sine();
+    normal_sine();
+    normal_sine();
+    normal_sine();
+    normal_sine();
 }
