@@ -3,23 +3,30 @@
 #include <omp.h>
 #include <chrono>
 #include <thread>
+#include <fstream>
+#include <iostream>
+
 // TODO: Use armadillo matrix instead of the standard library.
 using namespace arma;
 
 double omp_tester::run_tests()
 {
+    std::ofstream ofileomp;
+    std::ofstream ofilenorm;
+    std::ofstream ofilemplong;
+    std::ofstream ofilenormlong;
     // NOTE: The code below is not meant to be scalable, demo purposes only.
     //       There is a fair amount of repeat code that could easily be re-factored.
     // TODO: use armadillo matrices instead of std::vectors.
-    mat A = randu<mat>(1000, 1000);
-    mat B = randu<mat>(1000, 1000);
+    mat A = randu<mat>(2000, 2000);
+    mat B = randu<mat>(2000, 2000);
 
     // Create a vector for storing all the execution times.
     std::vector<int> v_omp;
     std::vector<int> v_norm;
 
-    // Run the code omp code 1000 times and get an average execution time.
-    for (int i = 0; i < 1000; i++)
+    // Run the code omp code 2000 times and get an average execution time.
+    for (int i = 0; i < 2000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         omp_sine();
@@ -29,8 +36,8 @@ double omp_tester::run_tests()
         //std::cout << "omp time: " << ns << std::endl;
         v_omp.push_back(ns);
     }
-    // Run the straight line code 1000 times and get an average execution time.
-    for (int i = 0; i < 1000; i++)
+    // Run the straight line code 2000 times and get an average execution time.
+    for (int i = 0; i < 2000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         normal_sine();
@@ -52,6 +59,19 @@ double omp_tester::run_tests()
     std::cout << "   Normal mean: " << norm_stats.mean << " nanoseconds" << std::endl;
     std::cout << "Normal std dev: " << norm_stats.std_dev << std::endl;
 
+    ofileomp.open("omp.csv", std::ios::trunc);
+    std::vector<int>::iterator it_omp;
+    for(it_omp = v_omp.begin(); it_omp!= v_omp.end(); it_omp++){
+        ofileomp << it_omp - v_omp.begin() << "," << *it_omp << std::endl;
+    }
+    ofileomp.close();
+
+    ofilenorm.open("norm.csv", std::ios::trunc);
+    std::vector<int>::iterator it_norm;
+    for(it_norm = v_norm.begin(); it_norm!= v_norm.end(); it_norm++){
+        ofilenorm << it_norm - v_norm.begin() << "," << *it_norm << std::endl;
+    }
+    ofilenorm.close();
     // ----------Start of OMP Tasks demonstration-------------
     std::cout << "START LONG EXECUTION SECTION!" << std::endl;
 
@@ -60,10 +80,10 @@ double omp_tester::run_tests()
     std::vector<int> v_norm_l;
 
     // Execute long running code with OMP sections.
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 2000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        run_omp_large();
+        run_omp_tasks();
         std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 
         int ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
@@ -71,10 +91,10 @@ double omp_tester::run_tests()
         v_omp_l.push_back(ns);
     }
     // Execute long running code with straight line code.
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 2000; i++)
     {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        run_norm_large();
+        run_sequential_tasks();
         std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
 
         int ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
@@ -97,7 +117,7 @@ double omp_tester::run_tests()
 }
 // See header for comments.
 omp_tester::Stats omp_tester::get_stats(std::vector<int> v)
-{
+{    
     omp_tester::Stats cur_stats;
     double sum = std::accumulate(v.begin(), v.end(), 0.0);
     double mean = sum / v.size();
@@ -127,10 +147,10 @@ void omp_tester::omp_sine()
 
         sinTable[n] = std::sin(2 * M_PI * n / size);
         //This sleep will cause OpenMP to run faster than sequential code.
-        if(add_sleep)
-        {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
-        }
+        //if(add_sleep)
+        //{
+            //std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+        //}
 
         //Again there is some code commented out here for debugging.
         //This will allow you to see the order OpenMP decides to index
@@ -153,10 +173,10 @@ void omp_tester::normal_sine()
     for(int n=0; n<size; ++n)
     {
         sinTable[n] = std::sin(2 * M_PI * n / size);
-        if(add_sleep)
-        {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
-        }
+        //if(add_sleep)
+        //{
+            //std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+        //}
     }
     (void)sinTable; //suppress compiler warning
 }
